@@ -1,0 +1,84 @@
+#include <stdio.h>
+
+#define TAMANHO 10
+#define NAVIO 3
+#define AGUA 0
+#define TAMANHO_NAVIO 3
+#define QUANTIDADE_NAVIOS 4
+
+int tabuleiro[TAMANHO][TAMANHO] = {0};
+
+int verificar_limites(int linha, int coluna, int direcao, int tamanho) {
+    if (direcao == 0) return coluna + tamanho <= TAMANHO;
+    if (direcao == 1) return linha + tamanho <= TAMANHO;
+    if (direcao == 2) return linha + tamanho <= TAMANHO && coluna + tamanho <= TAMANHO;
+    if (direcao == 3) return linha + tamanho <= TAMANHO && coluna - tamanho + 1 >= 0;
+    return 0;
+}
+
+int verificar_sobreposicao(int linha, int coluna, int direcao, int tamanho) {
+    for (int i = 0; i < tamanho; i++) {
+        int l = linha, c = coluna;
+        if (direcao == 0) c += i;
+        if (direcao == 1) l += i;
+        if (direcao == 2) { l += i; c += i; }
+        if (direcao == 3) { l += i; c -= i; }
+        if (tabuleiro[l][c] == NAVIO) return 1;
+    }
+    return 0;
+}
+
+void posicionar_navio(int linha, int coluna, int direcao, int tamanho) {
+    for (int i = 0; i < tamanho; i++) {
+        int l = linha, c = coluna;
+        if (direcao == 0) c += i;
+        if (direcao == 1) l += i;
+        if (direcao == 2) { l += i; c += i; }
+        if (direcao == 3) { l += i; c -= i; }
+        tabuleiro[l][c] = NAVIO;
+    }
+}
+
+int main() {
+    int linha, coluna, direcao;
+
+    for (int i = 0; i < QUANTIDADE_NAVIOS; i++) {
+        if (i < 2) {
+            printf("Digite a linha e coluna para o navio %d (horizontal [0] ou vertical [1]):\n", i + 1);
+            scanf("%d %d %d", &linha, &coluna, &direcao);
+            if (direcao != 0 && direcao != 1) {
+                printf("Direção inválida.\n");
+                return 1;
+            }
+        } else {
+            printf("Digite a linha e coluna para o navio diagonal %d (principal [2] ou secundaria [3]):\n", i + 1);
+            scanf("%d %d %d", &linha, &coluna, &direcao);
+            if (direcao != 2 && direcao != 3) {
+                printf("Direção inválida para diagonal.\n");
+                return 1;
+            }
+        }
+
+        if (!verificar_limites(linha, coluna, direcao, TAMANHO_NAVIO)) {
+            printf("Erro: navio %d fora dos limites do tabuleiro.\n", i + 1);
+            return 1;
+        }
+
+        if (verificar_sobreposicao(linha, coluna, direcao, TAMANHO_NAVIO)) {
+            printf("Erro: navio %d está se sobrepondo.\n", i + 1);
+            return 1;
+        }
+
+        posicionar_navio(linha, coluna, direcao, TAMANHO_NAVIO);
+    }
+
+    printf("\nTabuleiro Batalha Naval (0 = Água, 3 = Navio):\n\n");
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            printf("%d ", tabuleiro[i][j]);
+        }
+        printf("\n");
+    }
+
+    return 0;
+}
