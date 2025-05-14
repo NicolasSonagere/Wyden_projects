@@ -1,0 +1,165 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define TAMANHO 10
+#define NAVIO 3
+#define AGUA 0
+#define HABILIDADE 5
+#define TAMANHO_NAVIO 3
+#define QUANTIDADE_NAVIOS 4
+#define TAM_HABILIDADE 5
+
+int tabuleiro[TAMANHO][TAMANHO] = {0};
+
+int verificar_limites(int linha, int coluna, int direcao, int tamanho) {
+    if (direcao == 0) return coluna + tamanho <= TAMANHO;
+    if (direcao == 1) return linha + tamanho <= TAMANHO;
+    if (direcao == 2) return linha + tamanho <= TAMANHO && coluna + tamanho <= TAMANHO;
+    if (direcao == 3) return linha + tamanho <= TAMANHO && coluna - tamanho + 1 >= 0;
+    return 0;
+}
+
+int verificar_sobreposicao(int linha, int coluna, int direcao, int tamanho) {
+    for (int i = 0; i < tamanho; i++) {
+        int l = linha, c = coluna;
+        if (direcao == 0) c += i;
+        if (direcao == 1) l += i;
+        if (direcao == 2) { l += i; c += i; }
+        if (direcao == 3) { l += i; c -= i; }
+        if (tabuleiro[l][c] == NAVIO) return 1;
+    }
+    return 0;
+}
+
+void posicionar_navio(int linha, int coluna, int direcao, int tamanho) {
+    for (int i = 0; i < tamanho; i++) {
+        int l = linha, c = coluna;
+        if (direcao == 0) c += i;
+        if (direcao == 1) l += i;
+        if (direcao == 2) { l += i; c += i; }
+        if (direcao == 3) { l += i; c -= i; }
+        tabuleiro[l][c] = NAVIO;
+    }
+}
+
+void construir_habilidade_cone(int matriz[TAM_HABILIDADE][TAM_HABILIDADE]) {
+    for (int i = 0; i < TAM_HABILIDADE; i++) {
+        for (int j = 0; j < TAM_HABILIDADE; j++) {
+            if (j >= (TAM_HABILIDADE - 1) / 2 - i && j <= (TAM_HABILIDADE - 1) / 2 + i)
+                matriz[i][j] = 1;
+            else
+                matriz[i][j] = 0;
+        }
+    }
+}
+
+void construir_habilidade_cruz(int matriz[TAM_HABILIDADE][TAM_HABILIDADE]) {
+    for (int i = 0; i < TAM_HABILIDADE; i++) {
+        for (int j = 0; j < TAM_HABILIDADE; j++) {
+            if (i == (TAM_HABILIDADE - 1) / 2 || j == (TAM_HABILIDADE - 1) / 2)
+                matriz[i][j] = 1;
+            else
+                matriz[i][j] = 0;
+        }
+    }
+}
+
+void construir_habilidade_octaedro(int matriz[TAM_HABILIDADE][TAM_HABILIDADE]) {
+    int centro = (TAM_HABILIDADE - 1) / 2;
+    for (int i = 0; i < TAM_HABILIDADE; i++) {
+        for (int j = 0; j < TAM_HABILIDADE; j++) {
+            if (abs(i - centro) + abs(j - centro) <= centro)
+                matriz[i][j] = 1;
+            else
+                matriz[i][j] = 0;
+        }
+    }
+}
+
+void aplicar_habilidade(int matriz[TAM_HABILIDADE][TAM_HABILIDADE], int origem_linha, int origem_coluna) {
+    int offset = TAM_HABILIDADE / 2;
+    for (int i = 0; i < TAM_HABILIDADE; i++) {
+        for (int j = 0; j < TAM_HABILIDADE; j++) {
+            int linha_tab = origem_linha - offset + i;
+            int coluna_tab = origem_coluna - offset + j;
+            if (linha_tab >= 0 && linha_tab < TAMANHO && coluna_tab >= 0 && coluna_tab < TAMANHO) {
+                if (matriz[i][j] == 1 && tabuleiro[linha_tab][coluna_tab] == AGUA) {
+                    tabuleiro[linha_tab][coluna_tab] = HABILIDADE;
+                }
+            }
+        }
+    }
+}
+
+void exibir_tabuleiro() {
+    printf("\nTabuleiro Batalha Naval:\n\n");
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            if (tabuleiro[i][j] == AGUA)
+                printf("0 ");
+            else if (tabuleiro[i][j] == NAVIO)
+                printf("3 ");
+            else if (tabuleiro[i][j] == HABILIDADE)
+                printf("5 ");
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+    int linha, coluna, direcao;
+
+    for (int i = 0; i < QUANTIDADE_NAVIOS; i++) {
+        if (i < 2) {
+            printf("Digite linha, coluna e direção (0=horizontal, 1=vertical) para o navio %d:\n", i + 1);
+            scanf("%d %d %d", &linha, &coluna, &direcao);
+            if (direcao != 0 && direcao != 1) {
+                printf("Direção inválida.\n");
+                return 1;
+            }
+        } else {
+            printf("Digite linha, coluna e direção (2=diagonal principal, 3=diagonal secundária) para o navio %d:\n", i + 1);
+            scanf("%d %d %d", &linha, &coluna, &direcao);
+            if (direcao != 2 && direcao != 3) {
+                printf("Direção inválida para diagonal.\n");
+                return 1;
+            }
+        }
+
+        if (!verificar_limites(linha, coluna, direcao, TAMANHO_NAVIO)) {
+            printf("Erro: navio %d fora dos limites.\n", i + 1);
+            return 1;
+        }
+
+        if (verificar_sobreposicao(linha, coluna, direcao, TAMANHO_NAVIO)) {
+            printf("Erro: navio %d está se sobrepondo.\n", i + 1);
+            return 1;
+        }
+
+        posicionar_navio(linha, coluna, direcao, TAMANHO_NAVIO);
+    }
+
+    int cone[TAM_HABILIDADE][TAM_HABILIDADE], cruz[TAM_HABILIDADE][TAM_HABILIDADE], octaedro[TAM_HABILIDADE][TAM_HABILIDADE];
+
+    construir_habilidade_cone(cone);
+    construir_habilidade_cruz(cruz);
+    construir_habilidade_octaedro(octaedro);
+
+    int origem_linha, origem_coluna;
+
+    printf("Digite a origem da habilidade CONE (linha coluna):\n");
+    scanf("%d %d", &origem_linha, &origem_coluna);
+    aplicar_habilidade(cone, origem_linha, origem_coluna);
+
+    printf("Digite a origem da habilidade CRUZ (linha coluna):\n");
+    scanf("%d %d", &origem_linha, &origem_coluna);
+    aplicar_habilidade(cruz, origem_linha, origem_coluna);
+
+    printf("Digite a origem da habilidade OCTAEDRO (linha coluna):\n");
+    scanf("%d %d", &origem_linha, &origem_coluna);
+    aplicar_habilidade(octaedro, origem_linha, origem_coluna);
+
+    exibir_tabuleiro();
+
+    return 0;
+}
